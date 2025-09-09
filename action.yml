@@ -1,6 +1,6 @@
 name: 'Pull request reviewer reminder action'
-description: 'Action to send Github mentions when there are pull requests pending for reviews.'
-author: 'Kenji Tomita'
+description: 'Action to send Github mentions when there are pull requests pending for reviews. Based on work from Kenji Tomita.'
+author: 'Peter van der Veeken'
 inputs:
   github_token:
     required: true
@@ -11,6 +11,12 @@ inputs:
   review_turnaround_hours:
     required: true
     description: 'This is the deadline for reviews. If this time is exceeded, a reminder wil be send.'
+  second_reminder_message:
+    required: false
+    description: 'Message to send on second reminder.'
+  second_review_turnaround_hours:
+    required: false
+    description: 'This is the deadline for second reviews. If this time is exceeded, a second reminder will be sent.'
 runs:
   using: 'node16'
   main: 'dist/index.js'
