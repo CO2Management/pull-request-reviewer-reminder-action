@@ -31,7 +31,7 @@ async function run(): Promise<void> {
                   }
                 }
               },
-              reviews(first: 50, states: [APPROVED, CHANGES_REQUESTED, COMMENTED]) {
+              reviews(first: 50, states: [PENDING]) {
                 nodes {
                   __typename
                   ... on PullRequestReview {
@@ -55,10 +55,12 @@ async function run(): Promise<void> {
         }
       )
 
-      if (pullRequestResponse.repository.pullRequest.reviews.nodes.length > 0) {
+      // Skip if there are no reviews in the 'PENDING' state
+      if (pullRequestResponse.repository.pullRequest.reviews.nodes.length === 0) {
         continue
       }
 
+      // Skip if there are no review requests
       if (
         pullRequestResponse.repository.pullRequest.timelineItems.nodes
           .length === 0
