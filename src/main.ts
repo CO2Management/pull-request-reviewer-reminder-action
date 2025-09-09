@@ -16,7 +16,7 @@ async function run(): Promise<void> {
     })
 
     for (const pr of pullRequests) {
-      core.info(`pr title: ${pr.title}`)
+      core.info(`pr ${pr.number}, title: ${pr.title}`)
 
       const pullRequestResponse = await octokit.graphql<PullRequestResponse>(
         `
@@ -55,16 +55,18 @@ async function run(): Promise<void> {
         }
       )
 
-      // Skip if there are no reviews in the 'PENDING' state
-      if (pullRequestResponse.repository.pullRequest.reviews.nodes.length === 0) {
-        continue
-      }
-
       // Skip if there are no review requests
       if (
         pullRequestResponse.repository.pullRequest.timelineItems.nodes
           .length === 0
       ) {
+        core.info('No review requests found, skipping')
+        continue
+      }
+
+      // Skip if there are no reviews in the 'PENDING' state
+      if (pullRequestResponse.repository.pullRequest.reviews.nodes.length === 0) {
+        core.info('No reviews found in the PENDING state, skipping')
         continue
       }
 
@@ -77,8 +79,9 @@ async function run(): Promise<void> {
         new Date(pullRequestCreatedAt).getTime() +
         1000 * 60 * 60 * reviewTurnaroundHours
 
-      core.info(`currentTime: ${currentTime} reviewByTime: ${reviewByTime}`)
+      core.info(`currentTime: ${new Date(currentTime)} reviewByTime: ${new Date(reviewByTime)}`)
       if (currentTime < reviewByTime) {
+        core.info('Not yet time to send a reminder, skipping')
         continue
       }
 
@@ -99,8 +102,8 @@ async function run(): Promise<void> {
           }
         ).length > 0
 
-      core.info(`hasReminderComment: ${hasReminderComment}`)
       if (hasReminderComment) {
+        core.info('Reminder comment already exists, skipping')
         continue
       }
 
@@ -111,7 +114,7 @@ async function run(): Promise<void> {
       })
 
       core.info(
-        `create comment issue_number: ${pullRequest.number} body: ${reviewers} ${addReminderComment}`
+        `comment created: ${addReminderComment}`
       )
     }
   } catch (error) {
