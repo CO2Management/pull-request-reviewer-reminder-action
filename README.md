@@ -1,5 +1,3 @@
-[![reminder-test](https://github.com/tommykw/pull-request-reviewer-reminder-action/actions/workflows/test.yml/badge.svg)](https://github.com/tommykw/pull-request-reviewer-reminder-action/actions/workflows/test.yml)
-
 # Pull Request reviewer reminder action
 
 ## Summary
@@ -12,19 +10,18 @@ Create a file with the following content under `.github/workflows/pull-request-r
 name: 'Pull request reviewer reminder'
 on:
   schedule:
-    # Check reviews every weekday, 10:00 and 17:00
-    - cron: '0 10,17 * * 1-5'
+    # Check reviews every weekday at 7:00
+    - cron: '0 7 * * 1-5'
     
 jobs:
   pull-request-reviewer-reminder: 
     runs-on: ubuntu-latest
     steps:
-      - uses: tommykw/pull-request-reviewer-reminder-action@v2
+      - uses: CO2Management/pull-request-reviewer-reminder-action@v1.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }} # Required
-          reminder_message: 'One business day has passed since the review started. Give priority to reviews as much as possible.' # Required. Messages to send to reviewers on Github.
-          review_turnaround_hours: 24 # Required. This is the deadline for reviews. If this time is exceeded, a reminder wil be send.
-```
-
-## License
-MIT
+          reminder_message: 'Three business days have passed since the review started. Give priority to reviews as much as possible.' # Required. Messages to send to reviewers on Github.
+          review_turnaround_hours: 72 # Required. This is the deadline for reviews. If this time is exceeded, a reminder wil be send.
+          # Optional inputs
+          second_reminder_message: 'A week has passed since the review started. This is a gentle reminder to review the changes.' # Optional
+          second_review_turnaround_hours: 168 # Optional

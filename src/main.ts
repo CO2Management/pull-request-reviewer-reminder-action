@@ -4,10 +4,11 @@ import * as github from '@actions/github'
 async function run(): Promise<void> {
   const octokit = github.getOctokit(core.getInput('github_token'))
   const reminderMessage = core.getInput('reminder_message')
-  const reviewTurnaroundHours = parseInt(
-    core.getInput('review_turnaround_hours'),
-    10
-  )
+  const reviewTurnaroundHours = core.getInput('review_turnaround_hours')
+
+  // optional second reminder
+  const secondReminderMessage = core.getInput('second_reminder_message', { required: false })
+  const secondReviewTurnaroundHours = core.getInput('second_review_turnaround_hours', { required: false })
 
   try {
     const {data: pullRequests} = await octokit.pulls.list({
@@ -75,12 +76,30 @@ async function run(): Promise<void> {
           .createdAt
 
       const currentTime = new Date().getTime()
+
       const reviewByTime =
         new Date(pullRequestCreatedAt).getTime() +
-        1000 * 60 * 60 * reviewTurnaroundHours
+        1000 * 60 * 60 * parseInt(reviewTurnaroundHours, 10)
 
-      core.info(`currentTime: ${new Date(currentTime)} reviewByTime: ${new Date(reviewByTime)}`)
-      if (currentTime < reviewByTime) {
+      const secondReviewByTime = secondReviewTurnaroundHours 
+        ? new Date(pullRequestCreatedAt).getTime() + 1000 * 60 * 60 * parseInt(secondReviewTurnaroundHours, 10)
+        : null
+
+      core.info(`currentTime: ${new Date(currentTime)}`)
+      core.info(`reviewByTime: ${new Date(reviewByTime)}`)
+      if (secondReviewByTime) {
+        core.info(`secondReviewByTime: ${new Date(secondReviewByTime)}`)
+      }
+
+      let reminderToSend = null
+
+      if (secondReviewByTime !== null && currentTime >= secondReviewByTime) {
+        reminderToSend = secondReminderMessage || ""
+      } else if (currentTime >= reviewByTime) {
+        reminderToSend = reminderMessage
+      }
+
+      if (!reminderToSend) {
         core.info('Not yet time to send a reminder, skipping')
         continue
       }
@@ -94,11 +113,11 @@ async function run(): Promise<void> {
         .map(rr => `@${rr.login}`)
         .join(', ')
 
-      const addReminderComment = `${reviewers} \n${reminderMessage}`
+      const addReminderComment = `${reviewers} \n${reminderToSend}`
       const hasReminderComment =
         pullRequestResponse.repository.pullRequest.comments.nodes.filter(
           node => {
-            return node.body.match(RegExp(reminderMessage)) != null
+            return node.body.match(RegExp(reminderToSend)) != null
           }
         ).length > 0
 
