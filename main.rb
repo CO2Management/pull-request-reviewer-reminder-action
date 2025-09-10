@@ -17,33 +17,24 @@ begin
   pull_requests.each do |pr|
     puts "pr #{pr.number}, title: #{pr.title}"
 
-    # Get timeline events and reviews
-    timeline = client.get("/repos/#{repo}/issues/#{pr.number}/timeline")
-    review_requested_events = timeline.select { |e| e[:event] == 'review_requested' }
+    # Get reviews and comments
     reviews = client.pull_request_reviews(repo, pr.number)
-    pending_reviews = reviews.select { |r| r[:state] == 'PENDING' }
     comments = client.issue_comments(repo, pr.number)
 
-    # Skip if there are no review requests
-    if review_requested_events.empty?
-      puts "No review requested events for PR ##{pr.number}, skipping."
+    # Skip if there are no requested reviewers
+    if pr.requested_reviewers.empty?
+      puts "No requested reviewers for PR ##{pr.number}, skipping."
       next
     end
 
-    # Skip if there are no reviews in the 'PENDING' state
-    if pending_reviews.empty?
-      puts "No pending reviews for PR ##{pr.number}, skipping."
-      next
-    end
-
-    pull_request_created_at = Time.parse(review_requested_events.first[:created_at])
+    pull_request_created_at = Time.parse(pr.created_at)
     current_time = Time.now
     review_by_time = pull_request_created_at + (REVIEW_TURNAROUND_HOURS.to_i * 3600)
     second_review_by_time = SECOND_REVIEW_TURNAROUND_HOURS ? (pull_request_created_at + (SECOND_REVIEW_TURNAROUND_HOURS.to_i * 3600)) : nil
 
-    puts "currentTime: #{current_time}"
-    puts "reviewByTime: #{review_by_time}"
-    puts "secondReviewByTime: #{second_review_by_time}" if second_review_by_time
+    puts "currentTime: #{current_time.to_s}"
+    puts "reviewByTime: #{review_by_time.to_s}"
+    puts "secondReviewByTime: #{second_review_by_time.to_s}" if second_review_by_time
 
     reminder_to_send = nil
     if second_review_by_time && current_time >= second_review_by_time
@@ -58,8 +49,8 @@ begin
     end
 
     reviewers = pr.requested_reviewers.map { |rr| "@#{rr[:login]}" }.join(', ')
-    add_reminder_comment = "#{reviewers} \n#{reminder_to_send}"
-    has_reminder_comment = comments.any? { |c| c[:body].include?(reminder_to_send) }
+    add_reminder_comment = "#{reviewers} \n#{reminder_to_send.to_s}"
+    has_reminder_comment = comments.any? { |c| c[:body].to_s.include?(reminder_to_send.to_s) }
 
     if has_reminder_comment
       puts "Reminder comment already exists for PR ##{pr.number}, skipping."
