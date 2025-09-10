@@ -8,7 +8,7 @@ REVIEW_TURNAROUND_HOURS = ENV['REVIEW_TURNAROUND_HOURS']
 SECOND_REMINDER_MESSAGE = ENV['SECOND_REMINDER_MESSAGE']
 SECOND_REVIEW_TURNAROUND_HOURS = ENV['SECOND_REVIEW_TURNAROUND_HOURS']
 
-client = Octokit::Client.new(access_token: GITHUB_TOKEN)
+client = Octokit::Client.new(access_token: GITHUB_TOKEN, per_page: 100)
 repo = ENV['GITHUB_REPOSITORY']
 
 begin
@@ -18,32 +18,26 @@ begin
     puts "pr #{pr.number}, title: #{pr.title}"
 
     # Get timeline events and reviews
-    timeline = client.get("/repos/#{repo}/issues/#{pr.number}/timeline")
+    timeline = client.get("/repos/#{repo}/issues/#{pr.number}/timeline", per_page: 100)
     review_requested_events = timeline.select { |e| e[:event] == 'review_requested' }
     reviews = client.pull_request_reviews(repo, pr.number)
-    pending_reviews = reviews.select { |r| r[:state] == 'PENDING' }
     comments = client.issue_comments(repo, pr.number)
 
-    # Skip if there are no review requests
-    if review_requested_events.empty?
-      puts "No review requested events for PR ##{pr.number}, skipping."
-      next
-    end
-
-    # Skip if there are no reviews in the 'PENDING' state
-    if pending_reviews.empty?
+    # Skip if there are no pending reviews
+    if review_requested_events.empty? || pr.requested_reviewers.empty?
       puts "No pending reviews for PR ##{pr.number}, skipping."
       next
     end
 
-    pull_request_created_at = Time.parse(review_requested_events.first[:created_at])
+    created_at_value = review_requested_events.last[:created_at]
+    pull_request_created_at = created_at_value.is_a?(Time) ? created_at_value : Time.parse(created_at_value)
     current_time = Time.now
     review_by_time = pull_request_created_at + (REVIEW_TURNAROUND_HOURS.to_i * 3600)
     second_review_by_time = SECOND_REVIEW_TURNAROUND_HOURS ? (pull_request_created_at + (SECOND_REVIEW_TURNAROUND_HOURS.to_i * 3600)) : nil
 
-    puts "currentTime: #{current_time}"
-    puts "reviewByTime: #{review_by_time}"
-    puts "secondReviewByTime: #{second_review_by_time}" if second_review_by_time
+    puts "currentTime: #{current_time.to_s}"
+    puts "reviewByTime: #{review_by_time.to_s}"
+    puts "secondReviewByTime: #{second_review_by_time.to_s}" if second_review_by_time
 
     reminder_to_send = nil
     if second_review_by_time && current_time >= second_review_by_time
