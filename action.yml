@@ -17,9 +17,19 @@ inputs:
   second_review_turnaround_hours:
     required: false
     description: 'This is the deadline for second reviews. If this time is exceeded, a second reminder will be sent.'
+  github_repository:
+    required: true
+    description: 'The owner/repo name, e.g. CO2Management/co2m'
 runs:
-  using: 'node16'
-  main: 'dist/index.js'
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    GITHUB_TOKEN: ${{ inputs.github_token }}
+    REMINDER_MESSAGE: ${{ inputs.reminder_message }}
+    REVIEW_TURNAROUND_HOURS: ${{ inputs.review_turnaround_hours }}
+    SECOND_REMINDER_MESSAGE: ${{ inputs.second_reminder_message }}
+    SECOND_REVIEW_TURNAROUND_HOURS: ${{ inputs.second_review_turnaround_hours }}
+    GITHUB_REPOSITORY: ${{ inputs.github_repository }}
 branding:
   icon: 'git-pull-request'
   color: 'gray-dark'
