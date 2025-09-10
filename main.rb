@@ -25,9 +25,16 @@ begin
     comments = client.issue_comments(repo, pr.number)
 
     # Skip if there are no review requests
-    next if review_requested_events.empty?
+    if review_requested_events.empty?
+      puts "No review requested events for PR ##{pr.number}, skipping."
+      next
+    end
+
     # Skip if there are no reviews in the 'PENDING' state
-    next if pending_reviews.empty?
+    if pending_reviews.empty?
+      puts "No pending reviews for PR ##{pr.number}, skipping."
+      next
+    end
 
     pull_request_created_at = Time.parse(review_requested_events.first[:created_at])
     current_time = Time.now
@@ -44,12 +51,20 @@ begin
     elsif current_time >= review_by_time
       reminder_to_send = REMINDER_MESSAGE
     end
-    next unless reminder_to_send
+
+    unless reminder_to_send
+      puts "No reminders to send for PR ##{pr.number}, skipping."
+      next
+    end
 
     reviewers = pr.requested_reviewers.map { |rr| "@#{rr[:login]}" }.join(', ')
     add_reminder_comment = "#{reviewers} \n#{reminder_to_send}"
     has_reminder_comment = comments.any? { |c| c[:body].include?(reminder_to_send) }
-    next if has_reminder_comment
+
+    if has_reminder_comment
+      puts "Reminder comment already exists for PR ##{pr.number}, skipping."
+      next
+    end
 
     client.add_comment(repo, pr.number, add_reminder_comment)
     puts "comment created: #{add_reminder_comment}"
