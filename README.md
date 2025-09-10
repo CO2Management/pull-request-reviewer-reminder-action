@@ -17,11 +17,11 @@ jobs:
   pull-request-reviewer-reminder: 
     runs-on: ubuntu-latest
     steps:
-      - uses: CO2Management/pull-request-reviewer-reminder-action@v1.0.0
+      - uses: CO2Management/pull-request-reviewer-reminder-action@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }} # Required
           reminder_message: 'Three business days have passed since the review started. Give priority to reviews as much as possible.' # Required. Messages to send to reviewers on Github.
           review_turnaround_hours: 72 # Required. This is the deadline for reviews. If this time is exceeded, a reminder wil be send.
           # Optional inputs
-          second_reminder_message: 'A week has passed since the review started. This is a gentle reminder to review the changes.' # Optional
+          second_reminder_message: 'A week has passed since the review started. This is a gentle and last reminder to review the changes.' # Optional
           second_review_turnaround_hours: 168 # Optional

@@ -94,7 +94,7 @@ async function run(): Promise<void> {
       let reminderToSend = null
 
       if (secondReviewByTime !== null && currentTime >= secondReviewByTime) {
-        reminderToSend = secondReminderMessage || ""
+        reminderToSend = secondReminderMessage
       } else if (currentTime >= reviewByTime) {
         reminderToSend = reminderMessage
       }
