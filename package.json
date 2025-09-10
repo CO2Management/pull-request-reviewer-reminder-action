@@ -1,6 +1,0 @@
-{
-  "name": "pull-request-reviewer-reminder-action",
-  "description": "GitHub Action to send reminders for pending PR reviews (Ruby version)",
-  "version": "1.0.0",
-  "license": "MIT"
-}
