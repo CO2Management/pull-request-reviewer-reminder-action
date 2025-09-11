@@ -22,35 +22,33 @@ begin
     review_requested_events = timeline.select { |e| e[:event] == 'review_requested' }
     reviews = client.pull_request_reviews(repo, pr.number)
     comments = client.issue_comments(repo, pr.number)
-
-    # Skip if there are no pending reviews
-    if review_requested_events.empty? || pr.requested_reviewers.empty?
-      puts "No pending reviews for PR ##{pr.number}, skipping."
-      next
-    end
-
-    # Check when the last review has been requested
-    created_at_value = review_requested_events.last[:created_at]
-    pull_request_created_at = created_at_value.is_a?(Time) ? created_at_value : Time.parse(created_at_value)
     current_time = Time.now
-    review_by_time = pull_request_created_at + (REVIEW_TURNAROUND_HOURS.to_i * 3600)
 
-    puts "currentTime: #{current_time.to_s}"
-    puts "reviewByTime: #{review_by_time.to_s}"
-
-    if current_time >= review_by_time
-      reviewers = pr.requested_reviewers.map { |rr| "@#{rr[:login]}" }.join(', ')
-      add_reminder_comment = "#{reviewers} \n#{REMINDER_MESSAGE}"
-      has_reminder_comment = comments.any? { |c| c[:body].include?(REMINDER_MESSAGE) }
-
-      if has_reminder_comment
-        puts "Reminder comment already exists for PR ##{pr.number}, skipping."
-      else
-        client.add_comment(repo, pr.number, add_reminder_comment)
-        puts "comment created: #{add_reminder_comment}"
-      end
+    if review_requested_events.empty? || pr.requested_reviewers.empty?
+      puts "No pending reviews for PR ##{pr.number}."
     else
-      puts "No reminders to send for PR ##{pr.number}, skipping."
+      # Check when the last review has been requested
+      created_at_value = review_requested_events.last[:created_at]
+      pull_request_created_at = created_at_value.is_a?(Time) ? created_at_value : Time.parse(created_at_value)
+      review_by_time = pull_request_created_at + (REVIEW_TURNAROUND_HOURS.to_i * 3600)
+
+      puts "currentTime: #{current_time.to_s}"
+      puts "reviewByTime: #{review_by_time.to_s}"
+
+      if current_time >= review_by_time
+        reviewers = pr.requested_reviewers.map { |rr| "@#{rr[:login]}" }.join(', ')
+        add_reminder_comment = "#{reviewers} \n#{REMINDER_MESSAGE}"
+        has_reminder_comment = comments.any? { |c| c[:body].include?(REMINDER_MESSAGE) }
+
+        if has_reminder_comment
+          puts "Reminder comment already exists for PR ##{pr.number}."
+        else
+          client.add_comment(repo, pr.number, add_reminder_comment)
+          puts "comment created: #{add_reminder_comment}"
+        end
+      else
+        puts "No reminders to send for PR ##{pr.number}."
+      end
     end
 
     # Loop through reviews grouped by [:user][:login] and see if any within a group has the last with state 'CHANGES_REQUESTED'
@@ -64,7 +62,8 @@ begin
       changes_requested_at = changes_requested_at_value.is_a?(Time) ? changes_requested_at_value : Time.parse(changes_requested_at_value)
       process_review_by_time = changes_requested_at + (PROCESS_REVIEW_TURNAROUND_HOURS.to_i * 3600)
 
-      puts "User #{user} requested changes at #{changes_requested_at}, processReviewByTime: #{process_review_by_time}"
+      puts "currentTime: #{current_time.to_s}"
+      puts "processReviewByTime: #{process_review_by_time.to_s}"
 
       if current_time >= process_review_by_time
         pr_author = "@#{pr.user[:login]}"
@@ -72,13 +71,13 @@ begin
         has_process_reminder_comment = comments.any? { |c| c[:body].include?(PROCESS_REMINDER_MESSAGE) }
 
         if has_process_reminder_comment
-          puts "Process reminder comment already exists for PR ##{pr.number}, skipping."
+          puts "Process reminder comment already exists for PR ##{pr.number}."
         else
           client.add_comment(repo, pr.number, add_process_reminder_comment)
           puts "Process reminder comment created: #{add_process_reminder_comment}"
         end
       else
-        puts "No process reminders to send for PR ##{pr.number} for user #{user}, skipping."
+        puts "No process reminders to send for PR ##{pr.number}."
       end
     end
   end
