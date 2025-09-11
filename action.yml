@@ -11,11 +11,11 @@ inputs:
   review_turnaround_hours:
     required: true
     description: 'This is the deadline for reviews. If this time is exceeded, a reminder wil be send.'
-  second_reminder_message:
-    required: false
+  process_reminder_message:
+    required: true
     description: 'Message to send on second reminder.'
-  second_review_turnaround_hours:
-    required: false
+  process_review_turnaround_hours:
+    required: true
     description: 'This is the deadline for second reviews. If this time is exceeded, a second reminder will be sent.'
   github_repository:
     required: true
@@ -27,8 +27,8 @@ runs:
     GITHUB_TOKEN: ${{ inputs.github_token }}
     REMINDER_MESSAGE: ${{ inputs.reminder_message }}
     REVIEW_TURNAROUND_HOURS: ${{ inputs.review_turnaround_hours }}
-    SECOND_REMINDER_MESSAGE: ${{ inputs.second_reminder_message }}
-    SECOND_REVIEW_TURNAROUND_HOURS: ${{ inputs.second_review_turnaround_hours }}
+    PROCESS_REMINDER_MESSAGE: ${{ inputs.process_reminder_message }}
+    PROCESS_REVIEW_TURNAROUND_HOURS: ${{ inputs.process_review_turnaround_hours }}
     GITHUB_REPOSITORY: ${{ inputs.github_repository }}
 branding:
   icon: 'git-pull-request'
